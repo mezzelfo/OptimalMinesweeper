@@ -1,6 +1,34 @@
 clear all
-clc
+%clc
 
+A = [[1 0 0 0 0 0 0 0 0 0 0 0]
+ [1 0 0 0 0 0 0 0 0 0 0 0]
+ [1 1 0 0 0 0 0 0 0 0 0 0]
+ [1 1 1 1 1 0 0 0 0 0 0 0]
+ [0 0 0 1 1 1 0 0 0 0 0 0]
+ [0 0 0 0 0 0 1 1 0 0 0 0]
+ [0 0 0 0 0 0 1 1 1 0 0 0]
+ [0 0 0 0 0 0 0 1 1 1 0 0]
+ [0 0 0 0 0 0 0 0 1 1 1 0]
+ [0 0 0 0 1 1 0 0 0 1 1 1]] ;
+b = [1 1 1 2 1 1 1 2 1 1] ;
+
+[infocount, varscount] = size(A);
+size(b)
+
+X = optimvar('X',varscount,'LowerBound',0,'UpperBound',1);
+prob = optimproblem;
+%prob.Constraints.cons1 = sum(X) <= 10;
+prob.Constraints.cons1 = A*X == b';
+prob.Objective = sum(X.*(X-1),'all');
+prob.ObjectiveSense = 'min';
+sol = solve(prob);
+sol.X
+
+%lsqlin(A,b,eye(25),ones(1,25))
+
+
+%%
 H = 8;
 W = 8;
 N = 10;
