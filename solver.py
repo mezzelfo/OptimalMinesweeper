@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import traceback
 
 import networkx as nx
-import cvxopt
+from qpsolvers import solve_qp
 
 class Solver():
     def __init__(self, H, W, N) -> None:
@@ -95,34 +95,42 @@ class Solver():
         # print(tallySolutions)
         # print(list(problem._variables.keys()))
         # Quad Prog sembra funzionare min x*(x-1)
+        orderedvars = sorted(problem._variables.keys(), key=lambda v: int(v[1:]))
         P2 = P[np.ix_(np.sum(P,1) > 0, np.sum(P,0) > 0)]    # tolgo le righe o colonne vuote
         numVars = P2.shape[1]
         try:
-            bella = cvxopt.solvers.qp(
-                P=cvxopt.matrix(2*np.eye(numVars).astype(float)),
-                q=cvxopt.matrix(-np.ones(numVars).astype(float)),
-                G=cvxopt.matrix(np.vstack([np.eye(numVars),-np.eye(numVars)]).astype(float)),
-                h=cvxopt.matrix(np.hstack([np.ones(numVars),np.zeros(numVars)]).astype(float)),
-                A=cvxopt.matrix(P2.astype(float)),
-                b=cvxopt.matrix(ravel_partialInfos[np.sum(P,1) > 0].astype(float)))['x']
+            bella = solve_qp(
+                P = 2*np.eye(numVars),
+                q = -np.ones(numVars),
+                G = None,
+                h = None,
+                A = P2,
+                b = ravel_partialInfos[np.sum(P,1) > 0],
+                lb = np.zeros(numVars),
+                ub = np.ones(numVars),
+            )
+            # bella = cvxopt.solvers.qp(
+            #     P=cvxopt.matrix(2*np.eye(numVars).astype(float)),
+            #     q=cvxopt.matrix(-np.ones(numVars).astype(float)),
+            #     G=cvxopt.matrix(np.vstack([np.eye(numVars),-np.eye(numVars)]).astype(float)),
+            #     h=cvxopt.matrix(np.hstack([np.ones(numVars),np.zeros(numVars)]).astype(float)),
+            #     A=cvxopt.matrix(P2.astype(float)),
+            #     b=cvxopt.matrix(ravel_partialInfos[np.sum(P,1) > 0].astype(float)))['x']
         except Exception:
-            print('errore')
-            traceback.print_exc()
-            print('numero soluzioni',len(solutions))
-            print('tally',np.asarray([tallySolutions[v] for v in problem._variables.keys()]))
-            print('A =',P2,';')
-            print('b =',ravel_partialInfos[np.sum(P,1) > 0],';')
-            G = nx.from_numpy_matrix(P, create_using=nx.DiGraph)
-            nx.draw_networkx(G, pos = {i:np.unravel_index(i,(self.H,self.W), order='F') for i in range(self.H * self.W)})
-            plt.matshow(uncovered)
-            plt.matshow(partialInfos)
-            plt.matshow(P)
-            plt.show()
-            exit()
-        print(np.asarray([tallySolutions[v] for v in problem._variables.keys()]))
-        print((np.asarray(bella).T * len(solutions)).round().astype(int).squeeze())
-        print(np.asarray(bella).T * len(solutions))
-        exit()
+            self.debug(solutions,tallySolutions,problem,P2,ravel_partialInfos,P,uncovered,partialInfos,orderedvars)
+        
+        fromenumeration = np.asarray([tallySolutions[v] for v in orderedvars])
+        fromqp = (np.asarray(bella).T * len(solutions)).round().astype(int).squeeze()
+        
+        try:
+            assert np.all(fromenumeration == fromqp)
+        except Exception:
+            print(fromenumeration)
+            print(fromqp)
+            print(bella)
+            self.debug(solutions,tallySolutions,problem,P2,ravel_partialInfos,P,uncovered,partialInfos,orderedvars)
+        #print(np.asarray(bella).T * len(solutions))
+        #exit()
 
 
         reverseTally = {}
@@ -166,3 +174,21 @@ class Solver():
                 s += ' '
             s += '\n'
         return s
+
+    def debug(self,solutions,tallySolutions,problem,P2,ravel_partialInfos,P,uncovered,partialInfos,orderedvars):
+        print('errore')
+        print('baord')
+        print(self.print(uncovered, partialInfos))
+        traceback.print_exc()
+        print('vars',orderedvars)
+        print('numero soluzioni',len(solutions))
+        print('tally',np.asarray([tallySolutions[v] for v in orderedvars]))
+        print('A =',P2,';')
+        print('b =',ravel_partialInfos[np.sum(P,1) > 0],';')
+        G = nx.from_numpy_matrix(P, create_using=nx.DiGraph)
+        nx.draw_networkx(G, pos = {i:np.unravel_index(i,(self.H,self.W), order='F') for i in range(self.H * self.W)})
+        plt.matshow(uncovered)
+        plt.matshow(partialInfos)
+        plt.matshow(P)
+        plt.show()
+        exit()

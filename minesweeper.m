@@ -1,29 +1,57 @@
 clear all
-%clc
+clc
 
-A = [[1 0 0 0 0 0 0 0 0 0 0 0]
- [1 0 0 0 0 0 0 0 0 0 0 0]
- [1 1 0 0 0 0 0 0 0 0 0 0]
- [1 1 1 1 1 0 0 0 0 0 0 0]
- [0 0 0 1 1 1 0 0 0 0 0 0]
- [0 0 0 0 0 0 1 1 0 0 0 0]
- [0 0 0 0 0 0 1 1 1 0 0 0]
- [0 0 0 0 0 0 0 1 1 1 0 0]
- [0 0 0 0 0 0 0 0 1 1 1 0]
- [0 0 0 0 1 1 0 0 0 1 1 1]] ;
-b = [1 1 1 2 1 1 1 2 1 1] ;
+A = [[1 1 1 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 1 1 1 1 1 0 1 1 1 0 0 0]
+ [0 0 0 0 0 0 0 0 1 1 0 0 1 1 1]] ;
+b = [1 1 1] ;
 
 [infocount, varscount] = size(A);
 size(b)
 
+%% Mio
 X = optimvar('X',varscount,'LowerBound',0,'UpperBound',1);
 prob = optimproblem;
-%prob.Constraints.cons1 = sum(X) <= 10;
+prob.Constraints.cons1 = sum(X) <= 10;
 prob.Constraints.cons1 = A*X == b';
 prob.Objective = sum(X.*(X-1),'all');
 prob.ObjectiveSense = 'min';
 sol = solve(prob);
 sol.X
+
+
+%% Mio QP
+% X = optimvar('X',varscount,'LowerBound',0,'UpperBound',1);
+% prob = optimproblem;
+% prob.Constraints.cons1 = sum(X) <= 10;
+% prob.Constraints.cons1 = A*X == b';
+% prob.Objective = sum(X.*(X-1),'all');
+% prob.ObjectiveSense = 'min';
+% sol = solve(prob);
+% sol.X
+
+%% Analytic center (Boyd and Vandenberghe)
+% X = optimvar('X',varscount,'LowerBound',0,'UpperBound',1);
+% prob = optimproblem;
+% prob.Constraints.cons1 = A*X == b';
+% prob.Objective = -log(sum(X,'all')-10);
+% prob.ObjectiveSense = 'min';
+% x0s.X = pippo;
+% sol = solve(prob, x0s);
+% sol.X
+
+
+%% Chebyshev center
+% X = optimvar('X',varscount,'LowerBound',0,'UpperBound',1);
+% r = optimvar('r',1,'LowerBound',0);
+% prob = optimproblem;
+% prob.Constraints.cons1 = sum(X) <= 10;
+% prob.Constraints.cons1 = A*X + r*vecnorm(A')' == b';
+% prob.Objective = r;
+% prob.ObjectiveSense = 'max';
+% sol = solve(prob);
+% sol.X
+% sol.r
 
 %lsqlin(A,b,eye(25),ones(1,25))
 
