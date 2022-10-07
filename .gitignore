@@ -3,3 +3,5 @@ __pycache__/
 minesweeper.asv
 azove-2.0
 Screenshot*
+.vscode/
+*.out

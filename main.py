@@ -31,10 +31,19 @@ def play(rStart,cStart, TOT = 1000):
     print(vinte,perse,vinte/(vinte+perse),perse/(vinte+perse))
     return vinte
 
+
+def debug():
+    for _ in range(10000):
+        ms.reset()
+        while ms.makeMove(0,0) == False:
+            ms.reset()
+        uncovered, partialInfos = ms.getState()
+        solver.getMove(uncovered, partialInfos)
+
 # res = np.zeros((9,9))
 # for r in range(9):
 #     for c in range(9):
 #         res[r,c] = play(r,c,TOT=10)
 
-play(0,0,TOT = 1000)
-
+#play(0,0,TOT = 10)
+debug()
